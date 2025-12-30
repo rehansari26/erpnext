@@ -14,37 +14,79 @@ frappe.query_reports["Consolidated Trial Balance"] = {
 			reqd: 1,
 		},
 		{
-			fieldname: "fiscal_year",
-			label: __("Fiscal Year"),
+			fieldname: "filter_based_on",
+			label: __("Filter Based On"),
+			fieldtype: "Select",
+			options: ["Fiscal Year", "Date Range"],
+			default: "Fiscal Year",
+			reqd: 1,
+			on_change: function () {
+				let filter_based_on = frappe.query_report.get_filter_value("filter_based_on");
+				frappe.query_report.toggle_filter_display("from_fiscal_year", filter_based_on === "Date Range");
+				frappe.query_report.toggle_filter_display("to_fiscal_year", filter_based_on === "Date Range");
+				frappe.query_report.toggle_filter_display("period_start_date", filter_based_on === "Fiscal Year");
+				frappe.query_report.toggle_filter_display("period_end_date", filter_based_on === "Fiscal Year");
+				frappe.query_report.refresh();
+			},
+		},
+		{
+			fieldname: "period_start_date",
+			label: __("Start Date"),
+			fieldtype: "Date",
+			depends_on: "eval:doc.filter_based_on == 'Date Range'",
+			mandatory_depends_on: "eval:doc.filter_based_on == 'Date Range'",
+		},
+		{
+			fieldname: "period_end_date",
+			label: __("End Date"),
+			fieldtype: "Date",
+			depends_on: "eval:doc.filter_based_on == 'Date Range'",
+			mandatory_depends_on: "eval:doc.filter_based_on == 'Date Range'",
+		},
+		{
+			fieldname: "from_fiscal_year",
+			label: __("Start Year"),
 			fieldtype: "Link",
 			options: "Fiscal Year",
 			default: erpnext.utils.get_fiscal_year(frappe.datetime.get_today()),
+			depends_on: "eval:doc.filter_based_on == 'Fiscal Year'",
+			mandatory_depends_on: "eval:doc.filter_based_on == 'Fiscal Year'",
+		},
+		{
+			fieldname: "to_fiscal_year",
+			label: __("End Year"),
+			fieldtype: "Link",
+			options: "Fiscal Year",
+			default: erpnext.utils.get_fiscal_year(frappe.datetime.get_today()),
+			depends_on: "eval:doc.filter_based_on == 'Fiscal Year'",
+			mandatory_depends_on: "eval:doc.filter_based_on == 'Fiscal Year'",
+		},
+		{
+			fieldname: "periodicity",
+			label: __("Periodicity"),
+			fieldtype: "Select",
+			options: [
+				{ value: "Monthly", label: __("Monthly") },
+				{ value: "Quarterly", label: __("Quarterly") },
+				{ value: "Half-Yearly", label: __("Half-Yearly") },
+				{ value: "Yearly", label: __("Yearly") },
+			],
+			default: "Yearly",
 			reqd: 1,
-			on_change: function (query_report) {
-				var fiscal_year = query_report.get_values().fiscal_year;
-				if (!fiscal_year) {
-					return;
-				}
-				frappe.model.with_doc("Fiscal Year", fiscal_year, function (r) {
-					var fy = frappe.model.get_doc("Fiscal Year", fiscal_year);
-					frappe.query_report.set_filter_value({
-						from_date: fy.year_start_date,
-						to_date: fy.year_end_date,
-					});
-				});
-			},
 		},
 		{
 			fieldname: "from_date",
 			label: __("From Date"),
 			fieldtype: "Date",
 			default: erpnext.utils.get_fiscal_year(frappe.datetime.get_today(), true)[1],
+			hidden: 1,
 		},
 		{
 			fieldname: "to_date",
 			label: __("To Date"),
 			fieldtype: "Date",
 			default: erpnext.utils.get_fiscal_year(frappe.datetime.get_today(), true)[2],
+			hidden: 1,
 		},
 		{
 			fieldname: "finance_book",
